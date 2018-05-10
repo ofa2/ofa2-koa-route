@@ -4,43 +4,52 @@ const rollup = require('rollup');
 const resolve = require('rollup-plugin-node-resolve');
 const babel = require('rollup-plugin-babel');
 const json = require('rollup-plugin-json');
+const eslint = require('rollup-plugin-eslint');
+const uglify = require('rollup-plugin-uglify');
 const { dependencies } = require('../package.json');
 
 const external = Object.keys(dependencies);
 
-const cjsConfig = {
+const builtins = Object.keys(process.binding('natives')).filter((str) => {
+  return /^(?!(?:internal|node|v8)\/)/.test(str);
+});
+external.push(...builtins);
+
+const baseConfig = {
   input: 'src/index.js',
-  output: {
-    file: 'dist/bundle.cjs.js',
-    format: 'cjs',
-    sourcemap: true,
-  },
   plugins: [
     json(),
     resolve(),
+    eslint(),
     babel({
       exclude: 'node_modules/**', // only transpile our source code
     }),
+    uglify(),
   ],
   external,
 };
 
-const esConfig = {
-  input: 'src/index.js',
-  output: {
-    file: 'dist/bundle.esm.js',
-    format: 'es',
-    sourcemap: true,
+const cjsConfig = Object.assign(
+  {
+    output: {
+      file: 'dist/bundle.cjs.js',
+      format: 'cjs',
+      sourcemap: true,
+    },
   },
-  plugins: [
-    json(),
-    resolve(),
-    babel({
-      exclude: 'node_modules/**', // only transpile our source code
-    }),
-  ],
-  external,
-};
+  baseConfig
+);
+
+const esConfig = Object.assign(
+  {
+    output: {
+      file: 'dist/bundle.esm.js',
+      format: 'es',
+      sourcemap: true,
+    },
+  },
+  baseConfig
+);
 
 async function build(config) {
   // create a bundle
