@@ -5,7 +5,6 @@ const resolve = require('rollup-plugin-node-resolve');
 const babel = require('rollup-plugin-babel');
 const json = require('rollup-plugin-json');
 const eslint = require('rollup-plugin-eslint');
-const uglify = require('rollup-plugin-uglify');
 const { dependencies } = require('../package.json');
 
 const external = Object.keys(dependencies);
@@ -24,7 +23,6 @@ const baseConfig = {
     babel({
       exclude: 'node_modules/**', // only transpile our source code
     }),
-    uglify(),
   ],
   external,
 };

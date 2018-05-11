@@ -64,12 +64,10 @@ function lift() {
       throw new Error(`undefined action method: ${action}`);
     }
 
-    if ({}.toString.call(actionMethod) !== '[object AsyncFunction]') {
-      throw new Error('controller function need be async');
-    }
-
     let wrapActionMethod = function wrapActionMethod(ctx, ...args) {
-      return actionMethod(...[ctx, ...args])
+      return Promise.try(() => {
+        return actionMethod(...[ctx, ...args]);
+      })
         .then((data) => {
           if (!ctx.body) {
             ctx.body = data;

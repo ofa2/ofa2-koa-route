@@ -1,2 +1,96 @@
-import _ from"lodash";import Router from"koa-router";import bodyParser from"koa-bodyparser";const router=Router();function lift(){this.app.use(bodyParser()),_.forEach((this.config.http||{}).middlewares||[],t=>{if(_.isFunction(t))this.app.use(t());else if(_.isArray(t)){let o=_.map(t,t=>_.isFunction(t)?t():t);this.app.use(o)}}),_.forEach(this.config.routes,(t,o)=>{let r,e,i=o.indexOf(" ");if(i>-1){let t=[o.slice(0,i),o.slice(i+1)];r=(t[0]||"").toLowerCase(),[,e]=t}else r="all",e=o;if(!_.includes(["all","get","post","put","delete","patch"],r))throw new Error(`invalid route method: ${r}`);if(_.isFunction(t))return void router[r](...[e].concat(t));let s=t.split("."),n=s[0],l=this.controllers[n];if(!l)throw new Error(`undefined controller: ${n}`);let a=s[1],c=l[a].bind(l);if(!c)throw new Error(`undefined action method: ${t}`);if("[object AsyncFunction]"!=={}.toString.call(c))throw new Error("controller function need be async");let u=this.controllerActionPolicies&&this.controllerActionPolicies[`${n}.${a}`]||[];router[r](...[e].concat(u).concat(function(t,...o){return c(...[t,...o]).then(o=>(t.body||(t.body=o),o)).catch(global.Errors,o=>{global.logger.warn(o),t.status=t.status||400,t.body=o}).catch(o=>{global.logger.warn(o),t.status=t.status||400})}))}),this.app.use(router.routes()),this.app.use(router.allowedMethods())}export default lift;
+import _ from 'lodash';
+import Router from 'koa-router';
+import bodyParser from 'koa-bodyparser';
+
+const router = Router();
+
+function lift() {
+  this.app.use(bodyParser());
+
+  _.forEach((this.config.http || {}).middlewares || [], middleware => {
+    if (_.isFunction(middleware)) {
+      this.app.use(middleware());
+      return;
+    }
+
+    if (_.isArray(middleware)) {
+      let middlewareArr = _.map(middleware, arg => {
+        if (_.isFunction(arg)) {
+          return arg();
+        }
+
+        return arg;
+      });
+
+      this.app.use(middlewareArr);
+    }
+  });
+
+  _.forEach(this.config.routes, (action, key) => {
+    let method;
+    let pattern;
+    let index = key.indexOf(' ');
+    let allMethods = ['all', 'get', 'post', 'put', 'delete', 'patch'];
+
+    if (index > -1) {
+      let keyParts = [key.slice(0, index), key.slice(index + 1)];
+      method = (keyParts[0] || '').toLowerCase();
+      [, pattern] = keyParts;
+    } else {
+      method = 'all';
+      pattern = key;
+    }
+
+    if (!_.includes(allMethods, method)) {
+      throw new Error(`invalid route method: ${method}`);
+    }
+
+    if (_.isFunction(action)) {
+      router[method](...[pattern].concat(action));
+      return;
+    }
+
+    let actionParts = action.split('.');
+    let controllerName = actionParts[0];
+    let controller = this.controllers[controllerName];
+
+    if (!controller) {
+      throw new Error(`undefined controller: ${controllerName}`);
+    }
+
+    let actionMethodName = actionParts[1];
+    let actionMethod = controller[actionMethodName].bind(controller);
+
+    if (!actionMethod) {
+      throw new Error(`undefined action method: ${action}`);
+    }
+
+    let wrapActionMethod = function wrapActionMethod(ctx, ...args) {
+      return Promise.try(() => {
+        return actionMethod(...[ctx, ...args]);
+      }).then(data => {
+        if (!ctx.body) {
+          ctx.body = data;
+        }
+
+        return data;
+      }).catch(global.Errors, err => {
+        global.logger.warn(err);
+        ctx.status = ctx.status || 400;
+        ctx.body = err;
+      }).catch(err => {
+        global.logger.warn(err);
+        ctx.status = ctx.status || 400;
+      });
+    };
+
+    let policies = this.controllerActionPolicies && this.controllerActionPolicies[`${controllerName}.${actionMethodName}`] || [];
+    router[method](...[pattern].concat(policies).concat(wrapActionMethod));
+  });
+
+  this.app.use(router.routes());
+  this.app.use(router.allowedMethods());
+}
+
+export default lift;
 //# sourceMappingURL=bundle.esm.js.map
