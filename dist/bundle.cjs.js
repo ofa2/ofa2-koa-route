@@ -4,12 +4,12 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var _ = _interopDefault(require('lodash'));
 var Router = _interopDefault(require('koa-router'));
-var bodyParser = _interopDefault(require('koa-bodyparser'));
+var koaBody = _interopDefault(require('koa-body'));
 
 const router = Router();
 
 function lift() {
-  this.app.use(bodyParser());
+  this.app.use(koaBody());
 
   _.forEach((this.config.http || {}).middlewares || [], middleware => {
     if (_.isFunction(middleware)) {

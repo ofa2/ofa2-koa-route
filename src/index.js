@@ -1,11 +1,12 @@
 import _ from 'lodash';
 import Router from 'koa-router';
-import bodyParser from 'koa-bodyparser';
+import koaBody from 'koa-body';
 
 const router = Router();
 
 function lift() {
-  this.app.use(bodyParser());
+  this.app.use(koaBody());
+
   _.forEach((this.config.http || {}).middlewares || [], (middleware) => {
     if (_.isFunction(middleware)) {
       this.app.use(middleware());
