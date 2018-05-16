@@ -75,12 +75,13 @@ function lift() {
 
         return data;
       }).catch(global.Errors, err => {
-        global.logger.warn(err);
-        ctx.status = ctx.status || 400;
+        global.logger.warn(err); // koa 默认 status为404, 改成 400
+
+        ctx.status = ctx.status === 404 ? 400 : ctx.status;
         ctx.body = err;
       }).catch(err => {
         global.logger.warn(err);
-        ctx.status = ctx.status || 400;
+        ctx.status = ctx.status === 404 ? 400 : ctx.status;
       });
     };
 
