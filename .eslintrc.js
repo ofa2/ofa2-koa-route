@@ -2,6 +2,8 @@ module.exports = {
   extends: 'airbnb-base',
   plugins: [],
   globals: {
+    Errors: false,
+    logger: false,
     Promise: false,
   },
   rules: {

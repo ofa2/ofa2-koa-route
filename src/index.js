@@ -5,6 +5,14 @@ import koaBody from 'koa-body';
 const router = Router();
 
 function lift() {
+  if (!global.Errors) {
+    throw new Error('no global Errors found');
+  }
+
+  if (!global.logger) {
+    throw new Error('no global logger found');
+  }
+
   this.app.use(koaBody());
 
   _.forEach((this.config.http || {}).middlewares || [], (middleware) => {
@@ -75,15 +83,16 @@ function lift() {
           }
           return data;
         })
-        .catch(global.Errors, (err) => {
-          global.logger.warn(err);
+        .catch(Errors.OperationalError, (err) => {
+          logger.warn(err);
           // koa 默认 status为404, 改成 400
           ctx.status = ctx.status === 404 ? 400 : ctx.status;
-          ctx.body = err;
+          ctx.body = err.response();
         })
         .catch((err) => {
-          global.logger.warn(err);
+          logger.warn(err);
           ctx.status = ctx.status === 404 ? 400 : ctx.status;
+          ctx.body = new Errors.Unknown().response();
         });
     };
 
