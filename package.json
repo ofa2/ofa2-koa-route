@@ -28,6 +28,7 @@
   "dependencies": {
     "koa-body": "^2.5.0",
     "koa-router": "^7.4.0",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.10",
+    "shortid": "^2.2.14"
   }
 }

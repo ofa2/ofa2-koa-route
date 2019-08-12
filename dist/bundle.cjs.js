@@ -5,8 +5,28 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var _ = _interopDefault(require('lodash'));
 var Router = _interopDefault(require('koa-router'));
 var koaBody = _interopDefault(require('koa-body'));
+var shortId = _interopDefault(require('shortid'));
 
 const router = Router();
+
+function addTrace(config) {
+  if (config && config.trace && config.trace.disabled) {
+    return (ctx, next) => {
+      return next();
+    };
+  }
+
+  return async (ctx, next) => {
+    let traceId = ctx.get('x-trace-id') || shortId();
+
+    if (global.als) {
+      global.als.set('traceId', traceId);
+    }
+
+    ctx.set('x-trace-id', traceId);
+    await next();
+  };
+}
 
 function lift() {
   if (!global.Errors) {
@@ -99,7 +119,8 @@ function lift() {
     };
 
     let policies = this.controllerActionPolicies && this.controllerActionPolicies[`${controllerName}.${actionMethodName}`] || [];
-    router[method](...[pattern].concat(policies).concat(wrapActionMethod));
+    const funList = [pattern].concat(policies).concat(wrapActionMethod);
+    router.use(addTrace(this.config))[method](...funList);
   });
 
   this.app.use(router.routes());

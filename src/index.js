@@ -1,8 +1,26 @@
 import _ from 'lodash';
 import Router from 'koa-router';
 import koaBody from 'koa-body';
+import shortId from 'shortid';
 
 const router = Router();
+
+function addTrace(config) {
+  if (config && config.trace && config.trace.disabled) {
+    return (ctx, next) => {
+      return next();
+    };
+  }
+
+  return async (ctx, next) => {
+    let traceId = ctx.get('x-trace-id') || shortId();
+    if (global.als) {
+      global.als.set('traceId', traceId);
+    }
+    ctx.set('x-trace-id', traceId);
+    await next();
+  };
+}
 
 function lift() {
   if (!global.Errors) {
@@ -101,7 +119,8 @@ function lift() {
         this.controllerActionPolicies[`${controllerName}.${actionMethodName}`]) ||
       [];
 
-    router[method](...[pattern].concat(policies).concat(wrapActionMethod));
+    const funList = [pattern].concat(policies).concat(wrapActionMethod);
+    router.use(addTrace(this.config))[method](...funList);
   });
 
   this.app.use(router.routes());
