@@ -1,6 +1,6 @@
 {
   "name": "@ofa2/ofa2-koa-route",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "main": "dist/bundle.cjs.js",
   "module": "dist/bundle.esm.js",
   "license": "MIT",
