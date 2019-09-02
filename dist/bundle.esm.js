@@ -116,9 +116,10 @@ function lift() {
 
     let policies = this.controllerActionPolicies && this.controllerActionPolicies[`${controllerName}.${actionMethodName}`] || [];
     const funList = [pattern].concat(policies).concat(wrapActionMethod);
-    router.use(addTrace(this.config))[method](...funList);
+    router[method](...funList);
   });
 
+  this.app.use(addTrace(this.config));
   this.app.use(router.routes());
   this.app.use(router.allowedMethods());
 }
