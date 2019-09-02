@@ -28,6 +28,24 @@ function addTrace(config) {
   };
 }
 
+function addCatch() {
+  return async (ctx, next) => {
+    try {
+      await next();
+    } catch (err) {
+      logger.warn(err);
+
+      if (err instanceof Errors.OperationalError) {
+        ctx.status = ctx.status === 404 ? 400 : ctx.status;
+        ctx.body = err.response();
+      } else {
+        ctx.status = ctx.status === 404 ? 400 : ctx.status;
+        ctx.body = new Errors.Unknown().response();
+      }
+    }
+  };
+}
+
 function lift() {
   if (!global.Errors) {
     throw new Error('no global Errors found');
@@ -106,15 +124,6 @@ function lift() {
         }
 
         return data;
-      }).catch(Errors.OperationalError, err => {
-        logger.warn(err); // koa 默认 status为404, 改成 400
-
-        ctx.status = ctx.status === 404 ? 400 : ctx.status;
-        ctx.body = err.response();
-      }).catch(err => {
-        logger.warn(err);
-        ctx.status = ctx.status === 404 ? 400 : ctx.status;
-        ctx.body = new Errors.Unknown().response();
       });
     };
 
@@ -124,6 +133,7 @@ function lift() {
   });
 
   this.app.use(addTrace(this.config));
+  this.app.use(addCatch());
   this.app.use(router.routes());
   this.app.use(router.allowedMethods());
 }
